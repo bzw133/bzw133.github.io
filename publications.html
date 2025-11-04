@@ -5,6 +5,7 @@
 <style>
 .cite{margin:0 0 14px 0}
 small.muted{color:#666}
+#err{color:#a00;margin-top:10px}
 </style>
 </head><body>
 <nav><div class="inner">
@@ -15,15 +16,11 @@ small.muted{color:#666}
 </div></nav>
 
 <div class="wrap">
-  <h1>Publications</h1>
-  <p class="lead">This list is generated from DOIs and formatted automatically.</p>
+  <h1>Publications (APA)</h1>
+  <p class="lead">Generated from DOIs; click a DOI to open the article.</p>
 
   <div id="pubs"></div>
-
-  <h2>Add or edit DOIs</h2>
-  <p>Paste new DOIs below (one per line) and reload the page.</p>
-  <textarea id="doiBox" style="width:100%;height:160px"></textarea>
-  <p><button class="btn" id="apply">Use these DOIs</button> <small class="muted">Your edits stay in the URL for this session.</small></p>
+  <div id="err"></div>
 
   <footer>© <span id="y"></span> Bo Wang</footer>
 </div>
@@ -31,111 +28,172 @@ small.muted{color:#666}
 <script>
 document.getElementById('y').textContent=new Date().getFullYear();
 
-const defaultDois = [
-  "10.1126/science.abn7711",
-  "10.1103/PhysRevB.105.014108",
-  "10.1038/s41524-021-00681-8",
-  "10.1063/5.0067429",
-  "10.1002/adma.202105071",
-  "10.1038/s41467-021-26660-7",
-  "10.1063/5.0068581",
-  "10.1038/s41524-021-00599-1",
-  "10.1016/j.actamat.2021.117038",
-  "10.1038/s41467-020-16207-7",
-  "10.1103/PhysRevLett.124.107601",
-  "10.3390/cryst10090804",
-  "10.1016/j.actamat.2020.04.032",
-  "10.1038/s41427-019-0117-y",
-  "10.1016/j.pmatsci.2019.05.003",
-  "10.1063/1.5116910",
-  "10.1016/j.actamat.2019.04.003",
-  "10.1038/s41467-019-08462-0",
-  "10.1021/acs.nanolett.7b04444",
-  "10.1063/1.4978360",
-  "10.1038/s41467-017-00710-5",
-  "10.1021/acsami.7b11292",
-  "10.1002/adma.201701864",
-  "10.1021/acs.nanolett.6b02963"
+// === Paste your DOIs here (one per string) ===
+const DOI_LIST = [
+"10.1038/s41524-021-00681-8",
+"10.1021/acsami.7b11292",
+"10.1016/j.actamat.2022.118351",
+"10.1002/apxr.202300003",
+"10.1016/j.actamat.2024.120025",
+"10.1016/j.pmatsci.2019.05.003",
+"10.1038/s41586-019-1092-8",
+"10.1063/5.0029167",
+"10.1103/physrevb.105.014108",
+"10.1016/j.actamat.2023.118777",
+"10.1021/acs.nanolett.2c02706",
+"10.1002/adma.202203469",
+"10.1016/j.actamat.2022.118015",
+"10.1063/5.0068581",
+"10.1002/adfm.202000284",
+"10.1038/s41586-019-1891-y",
+"10.1021/acs.nanolett.0c03875",
+"10.1002/adts.202000215",
+"10.1038/s41467-021-26660-7",
+"10.1126/science.abn7711",
+"10.1063/5.0067429",
+"10.1126/sciadv.abh2294",
+"10.1038/s41524-021-00599-1",
+"10.1002/advs.202004554",
+"10.1021/acsnano.0c01804",
+"10.1103/physrevlett.124.107601",
+"10.3390/cryst10090804",
+"10.1038/s41467-020-16207-7",
+"10.1002/adfm.202000109",
+"10.1002/adfm.201910569",
+"10.1016/j.nanoen.2020.104665",
+"10.1038/s41467-019-08462-0",
+"10.1038/s41467-017-00710-5",
+"10.1002/adma.201701864",
+"10.1016/j.actamat.2020.04.032",
+"10.1038/s41565-018-0083-5",
+"10.1002/adma.201902890",
+"10.1016/j.actamat.2019.04.003",
+"10.1021/acs.nanolett.7b04444",
+"10.1002/adem.201600803",
+"10.1021/acs.nanolett.6b02963",
+"10.1038/s41427-019-0117-y",
+"10.1038/s41467-023-42947-3",
+"10.1103/PhysRevB.109.094305",
+"10.1063/1.5116910",
+"10.1063/1.4978360",
+"10.1111/jace.20072",
+"10.1016/j.cpc.2022.108302",
+"10.1557/s43578-024-01460-z",
+"10.1557/s43577-024-00692-y",
+"10.1038/s41524-022-00930-4",
+"10.1002/adma.202302554",
+"10.1146/annurev-matsci-070218-121843",
+"10.1103/physrevb.110.054311",
+"10.1038/s41467-024-50847-3",
+"10.1016/j.actamat.2024.119688",
+"10.1007/s40843-023-2711-x",
+"10.1021/acsami.5c07143",
+"10.1149/1945-7111/ae08f3",
+"10.1126/science.adn4926",
+"10.1016/j.actamat.2025.121207",
+"10.1016/j.ensm.2025.104368",
+"10.1002/adma.202413713",
+"10.1016/j.ensm.2024.103776",
+"10.1038/s41524-024-01424-1",
+"10.1103/jg6w-fdl8",
+"10.1063/5.0241530",
+"10.1002/adfm.202213684",
+"10.1038/s41524-024-01229-2",
+"10.1063/5.0202453",
+"10.1002/adma.202105071",
+"10.1016/j.actamat.2021.117038",
+"10.1002/adma.201906224"
 ];
 
-function getDoisFromUrl() {
-  const u = new URL(location.href);
-  const raw = u.searchParams.get("dois");
-  if (!raw) return null;
-  return raw.split("|").map(d=>decodeURIComponent(d.trim())).filter(Boolean);
+// ----- Helpers -----
+const DOI_RX = /^10\./i;
+function toSentenceCase(s){
+  if(!s) return s;
+  const t = s.trim();
+  // Basic sentence case: first char upper, rest lower (keep ALL-CAPS words and formulas as-is)
+  return t.replace(/(^\w)(.*)$/s, (_,a,b)=>a.toUpperCase()+b.toLowerCase());
 }
-
-function setDoisInUrl(dois) {
-  const u = new URL(location.href);
-  u.searchParams.set("dois", dois.map(encodeURIComponent).join("|"));
-  history.replaceState({}, "", u.toString());
+function fmtAuthorsAPA(auth){
+  if(!auth || !auth.length) return "";
+  // "Family, G. I., Family, G., & Family, G."
+  const parts = auth.map(a=>{
+    const fam = (a.family||a.name||"").trim();
+    const given = (a.given||"").trim();
+    const inits = given ? given.split(/\s|-/).filter(Boolean).map(x=>x[0].toUpperCase()+".").join(" ") : "";
+    return fam ? `${fam}, ${inits}` : (a.name||"");
+  });
+  if(parts.length===1) return parts[0];
+  if(parts.length===2) return parts[0]+" & "+parts[1];
+  return parts.slice(0,-1).join(", ")+", & "+parts.slice(-1);
 }
+function fmtYear(msg){
+  const p = msg?.issued?.["date-parts"];
+  const y = (p && p[0] && p[0][0]) ? p[0][0] : "";
+  return y ? ` (${y}).` : ".";
+}
+function fmtTitleAPA(msg){
+  const title = Array.isArray(msg.title) ? msg.title[0] : msg.title || "";
+  return toSentenceCase(title);
+}
+function fmtContainerAPA(msg){
+  const j = Array.isArray(msg["container-title"]) ? msg["container-title"][0] : msg["container-title"] || "";
+  const vol = msg.volume ? `<i>${msg.volume}</i>` : "";
+  const iss = msg.issue ? `(${msg.issue})` : "";
+  const pg = msg.page ? `, ${msg.page}` : "";
+  const pieces = [j, [vol, iss].filter(Boolean).join(""), pg].filter(Boolean);
+  return pieces.length ? pieces.join(",") + "." : "";
+}
+function doiLink(doi){ return `https://doi.org/${encodeURIComponent(doi)}`; }
 
-async function fetchMeta(doi) {
-  const url = "https://api.crossref.org/works/" + encodeURIComponent(doi);
-  const r = await fetch(url, {headers: {"Accept":"application/json"}});
-  if (!r.ok) throw new Error("HTTP "+r.status);
+async function fetchCrossref(doi){
+  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}`;
+  const r = await fetch(url, {headers:{Accept:"application/json"}});
+  if(!r.ok) throw new Error(`Crossref ${r.status}`);
   const j = await r.json();
   return j.message;
 }
 
-function fmtAuthors(auth) {
-  if (!auth || !auth.length) return "";
-  const names = auth.map(a=>{
-    const given = (a.given||"").trim().split(/\s+/).map(s=>s[0]?.toUpperCase() + ".").join(" ");
-    const family = (a.family||"").trim();
-    return family ? family + " " + given : (a.name || "").trim();
-  });
-  if (names.length<=6) return names.join(", ");
-  return names.slice(0,6).join(", ") + ", et al.";
-}
-
-function fmtYear(msg) {
-  const p = msg["issued"]?.["date-parts"]?.[0];
-  return p && p[0] ? p[0] : "";
-}
-
-function fmtIEEE(msg, doi) {
-  const authors = fmtAuthors(msg.author);
-  const title = (msg.title && msg.title[0]) ? msg.title[0] : "(title)";
-  const journal = (msg["container-title"] && msg["container-title"][0]) ? msg["container-title"][0] : "";
-  const vol = msg.volume ? " vol. " + msg.volume : "";
-  const iss = msg.issue ? ", no. " + msg.issue : "";
-  const pages = msg.page ? ", pp. " + msg.page : "";
-  const year = fmtYear(msg) ? " (" + fmtYear(msg) + ")" : "";
-  const doiLink = "https://doi.org/" + encodeURIComponent(doi);
-  return `${authors}, “${title},” <i>${journal}</i>${vol}${iss}${pages}${year}. <a href="${doiLink}" target="_blank" rel="noopener">${doiLink}</a>`;
-}
-
-async function render(dois) {
+async function main(){
   const box = document.getElementById("pubs");
-  box.innerHTML = "<p>Loading " + dois.length + " items…</p>";
-  const items = await Promise.all(dois.map(async d=>{
-    try {
-      const m = await fetchMeta(d);
-      return { ok:true, html: fmtIEEE(m,d) };
-    } catch(e) {
-      const doiLink = "https://doi.org/" + encodeURIComponent(d);
-      return { ok:false, html: `DOI: <a href="${doiLink}" target="_blank" rel="noopener">${doiLink}</a>` };
+  const err = document.getElementById("err");
+  box.innerHTML = "<p>Loading…</p>";
+  err.textContent = "";
+
+  // fetch all, but don't fail the whole page if one DOI breaks
+  const results = await Promise.all(DOI_LIST.map(async d=>{
+    const doi = d.trim();
+    if(!DOI_RX.test(doi)) return {doi, ok:false, html:`Unrecognized DOI format: ${doi}`};
+    try{
+      const m = await fetchCrossref(doi);
+      const year = (m.issued && m.issued["date-parts"] && m.issued["date-parts"][0] && m.issued["date-parts"][0][0]) || 0;
+      const authors = fmtAuthorsAPA(m.author);
+      const title = fmtTitleAPA(m);
+      const where = fmtContainerAPA(m);
+      const link = doiLink(doi);
+      const html = `${authors}${fmtYear(m)} ${title}. <i>${where}</i> <a href="${link}" target="_blank" rel="noopener">${link}</a>`;
+      return {doi, ok:true, year, html};
+    }catch(e){
+      const link = doiLink(doi);
+      return {doi, ok:false, year:0, html:`[DOI lookup failed] <a href="${link}" target="_blank" rel="noopener">${link}</a>`};
     }
   }));
+
+  // sort by year desc, then by title
+  results.sort((a,b)=> (b.year||0)-(a.year||0) || a.html.localeCompare(b.html));
+
   box.innerHTML = "";
-  items.forEach((it,i)=>{
+  results.forEach((it,i)=>{
     const p = document.createElement("p");
     p.className = "cite";
-    p.innerHTML = "["+(i+1)+"] " + it.html;
+    p.innerHTML = it.ok ? it.html : it.html;
     box.appendChild(p);
   });
+
+  const failed = results.filter(r=>!r.ok).length;
+  if(failed){
+    err.textContent = `Note: ${failed} item(s) could not be resolved via Crossref (shown with fallback links).`;
+  }
 }
-
-const dois = getDoisFromUrl() || defaultDois;
-document.getElementById("doiBox").value = dois.join("\n");
-render(dois);
-
-document.getElementById("apply").addEventListener("click", ()=>{
-  const list = document.getElementById("doiBox").value.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-  setDoisInUrl(list);
-  render(list);
-});
+main();
 </script>
 </body></html>
