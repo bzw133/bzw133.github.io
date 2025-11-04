@@ -2,22 +2,140 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bo Wang — Publications</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.cite{margin:0 0 14px 0}
+small.muted{color:#666}
+</style>
 </head><body>
 <nav><div class="inner">
   <a href="/">Home</a>
   <a href="/bio.html">Bio</a>
+  <a href="/research.html">Research</a>
   <a href="/publications.html">Publications</a>
 </div></nav>
 
 <div class="wrap">
-  <h1>Publications (selected)</h1>
-  <ol>
-    <li><strong>B. Wang</strong>, <em>Title</em>, Journal, Year. <a href="#">PDF</a> · <a href="#">DOI</a></li>
-    <li><strong>B. Wang</strong>, <em>Title</em>, Journal, Year. <a href="#">PDF</a> · <a href="#">DOI</a></li>
-    <li><strong>B. Wang</strong>, <em>Title</em>, Journal, Year. <a href="#">PDF</a> · <a href="#">DOI</a></li>
-  </ol>
+  <h1>Publications</h1>
+  <p class="lead">This list is generated from DOIs and formatted automatically.</p>
+
+  <div id="pubs"></div>
+
+  <h2>Add or edit DOIs</h2>
+  <p>Paste new DOIs below (one per line) and reload the page.</p>
+  <textarea id="doiBox" style="width:100%;height:160px"></textarea>
+  <p><button class="btn" id="apply">Use these DOIs</button> <small class="muted">Your edits stay in the URL for this session.</small></p>
 
   <footer>© <span id="y"></span> Bo Wang</footer>
 </div>
-<script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+
+<script>
+document.getElementById('y').textContent=new Date().getFullYear();
+
+const defaultDois = [
+  "10.1126/science.abn7711",
+  "10.1103/PhysRevB.105.014108",
+  "10.1038/s41524-021-00681-8",
+  "10.1063/5.0067429",
+  "10.1002/adma.202105071",
+  "10.1038/s41467-021-26660-7",
+  "10.1063/5.0068581",
+  "10.1038/s41524-021-00599-1",
+  "10.1016/j.actamat.2021.117038",
+  "10.1038/s41467-020-16207-7",
+  "10.1103/PhysRevLett.124.107601",
+  "10.3390/cryst10090804",
+  "10.1016/j.actamat.2020.04.032",
+  "10.1038/s41427-019-0117-y",
+  "10.1016/j.pmatsci.2019.05.003",
+  "10.1063/1.5116910",
+  "10.1016/j.actamat.2019.04.003",
+  "10.1038/s41467-019-08462-0",
+  "10.1021/acs.nanolett.7b04444",
+  "10.1063/1.4978360",
+  "10.1038/s41467-017-00710-5",
+  "10.1021/acsami.7b11292",
+  "10.1002/adma.201701864",
+  "10.1021/acs.nanolett.6b02963"
+];
+
+function getDoisFromUrl() {
+  const u = new URL(location.href);
+  const raw = u.searchParams.get("dois");
+  if (!raw) return null;
+  return raw.split("|").map(d=>decodeURIComponent(d.trim())).filter(Boolean);
+}
+
+function setDoisInUrl(dois) {
+  const u = new URL(location.href);
+  u.searchParams.set("dois", dois.map(encodeURIComponent).join("|"));
+  history.replaceState({}, "", u.toString());
+}
+
+async function fetchMeta(doi) {
+  const url = "https://api.crossref.org/works/" + encodeURIComponent(doi);
+  const r = await fetch(url, {headers: {"Accept":"application/json"}});
+  if (!r.ok) throw new Error("HTTP "+r.status);
+  const j = await r.json();
+  return j.message;
+}
+
+function fmtAuthors(auth) {
+  if (!auth || !auth.length) return "";
+  const names = auth.map(a=>{
+    const given = (a.given||"").trim().split(/\s+/).map(s=>s[0]?.toUpperCase() + ".").join(" ");
+    const family = (a.family||"").trim();
+    return family ? family + " " + given : (a.name || "").trim();
+  });
+  if (names.length<=6) return names.join(", ");
+  return names.slice(0,6).join(", ") + ", et al.";
+}
+
+function fmtYear(msg) {
+  const p = msg["issued"]?.["date-parts"]?.[0];
+  return p && p[0] ? p[0] : "";
+}
+
+function fmtIEEE(msg, doi) {
+  const authors = fmtAuthors(msg.author);
+  const title = (msg.title && msg.title[0]) ? msg.title[0] : "(title)";
+  const journal = (msg["container-title"] && msg["container-title"][0]) ? msg["container-title"][0] : "";
+  const vol = msg.volume ? " vol. " + msg.volume : "";
+  const iss = msg.issue ? ", no. " + msg.issue : "";
+  const pages = msg.page ? ", pp. " + msg.page : "";
+  const year = fmtYear(msg) ? " (" + fmtYear(msg) + ")" : "";
+  const doiLink = "https://doi.org/" + encodeURIComponent(doi);
+  return `${authors}, “${title},” <i>${journal}</i>${vol}${iss}${pages}${year}. <a href="${doiLink}" target="_blank" rel="noopener">${doiLink}</a>`;
+}
+
+async function render(dois) {
+  const box = document.getElementById("pubs");
+  box.innerHTML = "<p>Loading " + dois.length + " items…</p>";
+  const items = await Promise.all(dois.map(async d=>{
+    try {
+      const m = await fetchMeta(d);
+      return { ok:true, html: fmtIEEE(m,d) };
+    } catch(e) {
+      const doiLink = "https://doi.org/" + encodeURIComponent(d);
+      return { ok:false, html: `DOI: <a href="${doiLink}" target="_blank" rel="noopener">${doiLink}</a>` };
+    }
+  }));
+  box.innerHTML = "";
+  items.forEach((it,i)=>{
+    const p = document.createElement("p");
+    p.className = "cite";
+    p.innerHTML = "["+(i+1)+"] " + it.html;
+    box.appendChild(p);
+  });
+}
+
+const dois = getDoisFromUrl() || defaultDois;
+document.getElementById("doiBox").value = dois.join("\n");
+render(dois);
+
+document.getElementById("apply").addEventListener("click", ()=>{
+  const list = document.getElementById("doiBox").value.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  setDoisInUrl(list);
+  render(list);
+});
+</script>
 </body></html>
